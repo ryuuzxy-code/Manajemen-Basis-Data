@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengelolaan Basis Data Penjualan</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #0056b3;
+        }
+        .card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: "Courier New", Courier, monospace;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Manajemen Basis Data</h1>
+        
+        <div class="card">
+            <h2>Data Saat Ini</h2>
+            <pre id="current-data"></pre>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>-Pengujian Query</h2>
+                
+                <form id="form-transaksi">
+                    <h3>Pencatatan Transaksi</h3>
+                    <label for="pelanggan-id">ID Pelanggan:</label>
+                    <input type="number" id="pelanggan-id" placeholder="Contoh: 1" required>
+                    
+                    <label for="produk-id">ID Produk:</label>
+                    <input type="number" id="produk-id" placeholder="Contoh: 102" required>
+                    
+                    <label for="jumlah">Jumlah Produk:</label>
+                    <input type="number" id="jumlah" placeholder="Contoh: 2" required>
+                    
+                    <button type="submit">Catat Transaksi</button>
+                </form>
+                <hr>
+                <form id="form-cari-pelanggan">
+                    <h3>Pencarian Pelanggan</h3>
+                    <label for="nama-pelanggan">Nama Pelanggan:</label>
+                    <input type="text" id="nama-pelanggan" placeholder="Contoh: Budi" required>
+                    <button type="submit">Cari</button>
+                </form>
+                <hr>
+                 <form id="form-cek-stok">
+                    <h3>Pengecekan Stok</h3>
+                    <label for="stok-produk-id">ID Produk:</label>
+                    <input type="number" id="stok-produk-id" placeholder="Contoh: 101" required>
+                    <button type="submit">Cek Stok</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>Hasil Operasi</h2>
+                <pre id="output">Hasil akan ditampilkan di sini...</pre>
+            </div>
+        </div>
+    </div>
+
+<script>
+const db = {
+  "pelanggan": [
+    { "PelangganID": 1, "NamaPelanggan": "Budi Santoso", "Alamat": "Jl. Merdeka No. 10, Jakarta", "NomorTelepon": "081234567890" },
+    { "PelangganID": 2, "NamaPelanggan": "Ani Lestari", "Alamat": "Jl. Pahlawan No. 5, Bandung", "NomorTelepon": "087654321098" }
+  ],
+  "produk": [
+    { "ProdukID": 101, "NamaProduk": "Laptop ASUS", "Harga": 12000000.00, "Stok": 15 },
+    { "ProdukID": 102, "NamaProduk": "Mouse Logitech", "Harga": 350000.00, "Stok": 50 },
+    { "ProdukID": 103, "NamaProduk": "Keyboard Mechanical", "Harga": 850000.00, "Stok": 30 }
+  ],
+  "penjualan": [
+    { "PenjualanID": 1001, "TanggalPenjualan": "2024-07-23", "TotalHarga": 12350000.00, "PelangganID": 1 }
+  ],
+  "detailpenjualan": [
+    { "DetailID": 1, "PenjualanID": 1001, "ProdukID": 101, "JumlahProduk": 1, "Subtotal": 12000000.00 },
+    { "DetailID": 2, "PenjualanID": 1001, "ProdukID": 102, "JumlahProduk": 1, "Subtotal": 350000.00 }
+  ]
+};
+
+function catatTransaksi(pelangganID, detailProduk) {
+  const pelanggan = db.pelanggan.find(p => p.PelangganID === pelangganID);
+  if (!pelanggan) {
+      return `Error: Pelanggan dengan ID ${pelangganID} tidak ditemukan.`;
+  }
+  
+  const penjualanID = (db.penjualan.length > 0 ? Math.max(...db.penjualan.map(p => p.PenjualanID)) : 1000) + 1;
+  let totalHarga = 0;
+  let detailPenjualanBaru = [];
+  let stokCukup = true;
+  let pesanError = "";
+
+  detailProduk.forEach(item => {
+    const produk = db.produk.find(p => p.ProdukID === item.ProdukID);
+    if (!produk) {
+        stokCukup = false;
+        pesanError = `Error: Produk dengan ID ${item.ProdukID} tidak ditemukan.`;
+        return;
+    }
+    if (produk.Stok < item.JumlahProduk) {
+        stokCukup = false;
+        pesanError = `Error: Stok ${produk.NamaProduk} tidak mencukupi. Sisa: ${produk.Stok}.`;
+        return;
+    }
+
+    const subtotal = produk.Harga * item.JumlahProduk;
+    totalHarga += subtotal;
+    const detailID = (db.detailpenjualan.length > 0 ? Math.max(...db.detailpenjualan.map(d => d.DetailID)) : 0) + 1;
+    detailPenjualanBaru.push({ DetailID: detailID, PenjualanID: penjualanID, ProdukID: item.ProdukID, JumlahProduk: item.JumlahProduk, Subtotal: subtotal });
+  });
+
+  if (!stokCukup) {
+      return pesanError;
+  }
+
+  detailPenjualanBaru.forEach(detail => {
+      db.detailpenjualan.push(detail);
+      const produk = db.produk.find(p => p.ProdukID === detail.ProdukID);
+      produk.Stok -= detail.JumlahProduk; 
+  });
+
+  db.penjualan.push({
+    PenjualanID: penjualanID,
+    TanggalPenjualan: new Date().toISOString().slice(0, 10),
+    TotalHarga: totalHarga,
+    PelangganID: pelangganID
+  });
+
+  return `Transaksi berhasil dicatat dengan ID Penjualan: ${penjualanID}`;
+}
+
+function cariPelanggan(nama) {
+  return db.pelanggan.filter(p => p.NamaPelanggan.toLowerCase().includes(nama.toLowerCase()));
+}
+
+function cekStok(produkID) {
+  const produk = db.produk.find(p => p.ProdukID === produkID);
+  if (produk) {
+    return `Stok untuk "${produk.NamaProduk}" (ID: ${produkID}) adalah ${produk.Stok} unit.`;
+  }
+  return `Produk dengan ID ${produkID} tidak ditemukan.`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const outputEl = document.getElementById('output');
+    const currentDataEl = document.getElementById('current-data');
+    
+    function updateDataView() {
+        currentDataEl.textContent = JSON.stringify(db, null, 2);
+    }
+    
+    updateDataView();
+    
+    document.getElementById('form-transaksi').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const pelangganID = parseInt(document.getElementById('pelanggan-id').value, 10);
+        const produkID = parseInt(document.getElementById('produk-id').value, 10);
+        const jumlah = parseInt(document.getElementById('jumlah').value, 10);
+
+        if (isNaN(pelangganID) || isNaN(produkID) || isNaN(jumlah)) {
+            outputEl.textContent = "Error: Pastikan semua field transaksi terisi dengan angka.";
+            return;
+        }
+
+        const detailProduk = [{ ProdukID: produkID, JumlahProduk: jumlah }];
+        const result = catatTransaksi(pelangganID, detailProduk);
+        
+        outputEl.textContent = result;
+        updateDataView();
+    });
+
+    document.getElementById('form-cari-pelanggan').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nama = document.getElementById('nama-pelanggan').value;
+        const result = cariPelanggan(nama);
+        
+        if (result.length > 0) {
+            outputEl.textContent = JSON.stringify(result, null, 2);
+        } else {
+            outputEl.textContent = `Pelanggan dengan nama "${nama}" tidak ditemukan.`;
+        }
+    });
+    
+    document.getElementById('form-cek-stok').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const produkID = parseInt(document.getElementById('stok-produk-id').value, 10);
+        
+        if (isNaN(produkID)) {
+            outputEl.textContent = "Error: Masukkan ID Produk yang valid.";
+            return;
+        }
+        
+        const result = cekStok(produkID);
+        outputEl.textContent = result;
+    });
+});
+</script>
+
+</body>
+</html>
