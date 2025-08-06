@@ -13,14 +13,11 @@ Proyek ini merupakan aplikasi sederhana yang dibuat untuk **praktek siswa SMK ma
 
 - **HTML** – untuk struktur halaman.
 - **CSS** – untuk tampilan dan styling.
-- **JavaScript** – untuk mengambil dan menampilkan data dari file `.json`.
+- **JavaScript** – untuk mengambil dan menampilkan data dari string `json`.
 - **JSON** – sebagai format penyimpanan data.
 
 ## 🛠️ Fitur Aplikasi
 
-- Menampilkan data dari file `data.json` secara dinamis di halaman web.
 - Struktur antarmuka sederhana dan mudah dipahami.
 - Cocok untuk contoh data seperti daftar siswa, produk, tugas, dll.
-
-## 📁 Struktur Folder
 
